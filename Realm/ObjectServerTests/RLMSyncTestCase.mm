@@ -201,8 +201,18 @@ static NSURL *syncDirectoryForChildProcess() {
 
 - (RLMSyncUser *)logInUserForCredentials:(RLMSyncCredentials *)credentials
                                   server:(NSURL *)url {
+    return [self logInUserForCredentials:credentials server:url simulateReconnection:NO];
+}
+
+- (RLMSyncUser *)logInUserForCredentials:(RLMSyncCredentials *)credentials
+                                  server:(NSURL *)url
+                    simulateReconnection:(BOOL)simulateReconnection {
     NSString *process = self.isParent ? @"parent" : @"child";
     __block RLMSyncUser *theUser = nil;
+    if (simulateReconnection) {
+        [self disableNetworking];
+        [self enableNetworkingAfter:15];
+    }
     XCTestExpectation *expectation = [self expectationWithDescription:@"Should log in the user properly"];
     [RLMSyncUser logInWithCredentials:credentials
                         authServerURL:url
@@ -214,7 +224,7 @@ static NSURL *syncDirectoryForChildProcess() {
                              theUser = user;
                              [expectation fulfill];
                          }];
-    [self waitForExpectationsWithTimeout:4.0 handler:nil];
+    [self waitForExpectationsWithTimeout:30 handler:nil];
     XCTAssertTrue(theUser.state == RLMSyncUserStateActive,
                   @"User should have been valid, but wasn't. (process: %@)", process);
     return theUser;
@@ -307,7 +317,7 @@ static NSURL *syncDirectoryForChildProcess() {
                                          theError = err;
                                          [ex fulfill];
                                      }];
-    [self waitForExpectationsWithTimeout:10.0 handler:nil];
+    [self waitForExpectationsWithTimeout:60.0 handler:nil];
     if (error) {
         *error = theError;
     }
@@ -323,11 +333,11 @@ static NSURL *syncDirectoryForChildProcess() {
     XCTestExpectation *ex = [self expectationWithDescription:@"Upload waiter expectation"];
     __block NSError *theError = nil;
     [session waitForUploadCompletionOnQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0)
-                                   callback:^(NSError *err){
-                                       theError = err;
-                                       [ex fulfill];
-                                   }];
-    [self waitForExpectationsWithTimeout:10.0 handler:nil];
+                                                    callback:^(NSError *err){
+                                                        theError = err;
+                                                        [ex fulfill];
+                                                    }];
+    [self waitForExpectationsWithTimeout:60.0 handler:nil];
     if (error) {
         *error = theError;
     }
@@ -343,6 +353,26 @@ static NSURL *syncDirectoryForChildProcess() {
         XCTAssertNil(error, @"Session completion block returned with an error: %@", error);
         dispatch_semaphore_signal(semaphore);
     }];
+}
+
+- (void)disableNetworking {
+    NSTask *task = [[NSTask alloc] init];
+    task.launchPath = @"/bin/bash";
+    task.currentDirectoryPath = NSProcessInfo.processInfo.environment[@"PWD"];
+    task.arguments = @[@"./scripts/disable_networking.sh"];
+    [task launch];
+    [task waitUntilExit];
+}
+
+- (void)enableNetworkingAfter:(NSTimeInterval)secs {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(secs * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        NSTask *task = [[NSTask alloc] init];
+        task.launchPath = @"/bin/bash";
+        task.currentDirectoryPath = NSProcessInfo.processInfo.environment[@"PWD"];
+        task.arguments = @[@"./scripts/enable_networking.sh"];
+        [task launch];
+        [task waitUntilExit];
+    });
 }
 
 #pragma mark - XCUnitTest Lifecycle
