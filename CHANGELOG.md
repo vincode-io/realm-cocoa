@@ -25,7 +25,13 @@ Synchronized Realms require a server running Realm Object Server v2.0 or higher.
   `SortDescriptor.property`.
   These APIs have been superseded by equivalent APIs that take
   or return key paths instead of property names.
-  
+* Remove deprecated `{RLM}SyncPermission` and `{RLM}SyncPermissionChange`
+  classes. Use `{RLM}SyncPermissionValue` instead.
+* Remove deprecated `-[RLMSyncUser permissionRealmWithError:]` and
+  `SyncUser.permissionRealm()` APIs. Use the new permissions system.
+* Remove deprecated error `RLMSyncErrorBadResponse`. Use
+  `RLMSyncAuthErrorBadResponse` instead.
+
 ### Enhancements
 
 * Add a new error code to denote 'permission denied' errors when working
