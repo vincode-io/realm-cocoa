@@ -25,6 +25,8 @@ x.x.x Release notes (yyyy-MM-dd)
 * `List.description` now reports the correct types for nested lists.
 * Fix unmanaged object initialization when a nested property type returned
   `false` from `Object.shouldIncludeInDefaultSchema()`.
+* The `shouldCompactOnLaunch` block is no longer invoked if the Realm at that
+  path is already open on other threads.
 
 2.8.3 Release notes (2017-06-20)
 =============================================================
