@@ -47,6 +47,9 @@ typedef void(^RLMPermissionStatusBlock)(NSError * _Nullable);
 /// Exactly one of the two arguments will be populated.
 typedef void(^RLMPermissionResultsBlock)(RLMSyncPermissionResults * _Nullable, NSError * _Nullable);
 
+/// A block type used to report an error related to a specific user.
+typedef void(^RLMUserErrorReportingBlock)(RLMSyncUser * _Nonnull, NSError * _Nonnull);
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -127,6 +130,21 @@ NS_SWIFT_UNAVAILABLE("Use the full version of this API.");
  taking up space.
  */
 - (void)logOut;
+
+/**
+ An optional error handler which can be set to notify the host application should
+ the user encounter an error. Errors reported by this error handler are always
+ `RLMSyncAuthError`s.
+
+ @note Check for `RLMSyncAuthErrorInvalidAccessToken` to see if the user has
+       been remotely logged out because its refresh token expired, or because the
+       third party authentication service providing the user's identity has
+       logged the user out.
+
+ @warning Regardless of whether an error handler is defined, certain user errors
+          will automatically cause the user to enter the logged out state.
+ */
+@property (nullable, nonatomic) RLMUserErrorReportingBlock errorHandler NS_REFINED_FOR_SWIFT;
 
 #pragma mark - Sessions
 
