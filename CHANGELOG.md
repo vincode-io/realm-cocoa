@@ -27,6 +27,12 @@ x.x.x Release notes (yyyy-MM-dd)
   users defined using the access token credential type be logged in with an
   authentication server URL specified; this parameter will become mandatory
   in a future version of the SDK.
+* Add support for additional authentication-related errors that might be
+  reported by a Realm Object Server.
+* An error handler can now be registered upon `{RLM}SyncUser`s in order to
+  report authentication-related errors that affect the user.
+* Sync users are now automatically logged out upon receiving certain types
+  of errors that indicate they are no longer logged into the server.
 
 ### Bugfixes
 
