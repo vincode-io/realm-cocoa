@@ -112,6 +112,39 @@ RLM_ARRAY_TYPE(NonDefaultObject);
 }
 @end
 
+@interface SchemaTestClassWithSingleDuplicatePropertyBase : FakeObject
+@property NSString *string;
+@end
+
+@implementation SchemaTestClassWithSingleDuplicatePropertyBase
+@end
+
+@interface SchemaTestClassWithSingleDuplicateProperty : SchemaTestClassWithSingleDuplicatePropertyBase
+@property NSString *string;
+@end
+
+@implementation SchemaTestClassWithSingleDuplicateProperty
+@dynamic string;
+@end
+
+@interface SchemaTestClassWithMultipleDuplicatePropertiesBase : FakeObject
+@property NSString *string;
+@property int integer;
+@end
+
+@implementation SchemaTestClassWithMultipleDuplicatePropertiesBase
+@end
+
+@interface SchemaTestClassWithMultipleDuplicateProperties : SchemaTestClassWithMultipleDuplicatePropertiesBase
+@property NSString *string;
+@property int integer;
+@end
+
+@implementation SchemaTestClassWithMultipleDuplicateProperties
+@dynamic string;
+@dynamic integer;
+@end
+
 @interface UnindexableProperty : FakeObject
 @property double unindexable;
 @end
@@ -589,6 +622,15 @@ RLM_ARRAY_TYPE(NotARealClass)
                                               @"\t}\n"
                                               @"}");
 
+}
+
+- (void)testClassWithDuplicateProperties
+{
+    // If a property is overriden in a child class it should not be picked up more than once.
+    RLMObjectSchema *firstSchema = [RLMObjectSchema schemaForObjectClass:SchemaTestClassWithSingleDuplicateProperty.class];
+    XCTAssertEqual((int)firstSchema.properties.count, 1);
+    RLMObjectSchema *secondSchema = [RLMObjectSchema schemaForObjectClass:SchemaTestClassWithMultipleDuplicateProperties.class];
+    XCTAssertEqual((int)secondSchema.properties.count, 2);
 }
 
 - (void)testClassWithInvalidPrimaryKey {
