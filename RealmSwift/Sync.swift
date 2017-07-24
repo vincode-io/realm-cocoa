@@ -280,6 +280,20 @@ extension SyncUser {
     }
 
     /**
+     Retrieve permissions for a user.
+     */
+    public func retrievePermissions(callback: @escaping (SyncPermissionResults?, SyncPermissionError?) -> Void) {
+        self.__retrievePermissions() { (results, error) in
+            guard let results = results else {
+                callback(nil, error as! SyncPermissionError?)
+                return
+            }
+            let upcasted: RLMResults<SyncPermissionValue> = results
+            callback(Results(upcasted as! RLMResults<AnyObject>), nil)
+        }
+    }
+
+    /**
      Returns an instance of the Management Realm owned by the user.
 
      This Realm can be used to control access permissions for Realms managed by the user.
@@ -325,67 +339,6 @@ public typealias SyncPermissionValue = RLMSyncPermissionValue
  - see: `RLMSyncAccessLevel`
  */
 public typealias SyncAccessLevel = RLMSyncAccessLevel
-
-/**
- A collection of `SyncPermissionValue`s that represent the permissions
- that have been configured on all the Realms that some user is allowed
- to administer.
-
- - see: `RLMSyncPermissionResults`
- */
-public typealias SyncPermissionResults = RLMSyncPermissionResults
-
-#if swift(>=3.1)
-extension SyncPermissionResults: RandomAccessCollection {
-    public subscript(index: Int) -> SyncPermissionValue {
-        return object(at: index)
-    }
-
-    public func index(after i: Int) -> Int {
-        return i + 1
-    }
-
-    public var startIndex: Int {
-        return 0
-    }
-
-    public var endIndex: Int {
-        return count
-    }
-}
-#else
-extension SyncPermissionResults {
-    /// Return the first permission value in the results, or `nil` if
-    /// the results are empty.
-    public var first: SyncPermissionValue? {
-        return count > 0 ? object(at: 0) : nil
-    }
-
-    /// Return the last permission value in the results, or `nil` if
-    /// the results are empty.
-    public var last: SyncPermissionValue? {
-        return count > 0 ? object(at: count - 1) : nil
-    }
-}
-
-extension SyncPermissionResults: Sequence {
-    public struct Iterator: IteratorProtocol {
-        private let iteratorBase: NSFastEnumerationIterator
-
-        fileprivate init(results: SyncPermissionResults) {
-            iteratorBase = NSFastEnumerationIterator(results)
-        }
-
-        public func next() -> SyncPermissionValue? {
-            return iteratorBase.next() as! SyncPermissionValue?
-        }
-    }
-
-    public func makeIterator() -> SyncPermissionResults.Iterator {
-        return Iterator(results: self)
-    }
-}
-#endif
 
 /**
  This model is used to reflect permissions.
@@ -789,4 +742,19 @@ public extension SyncSession {
                                                 block(Progress(transferred: transferred, transferrable: transferrable))
         }
     }
+}
+
+extension SyncPermissionValue : RealmCollectionValue {
+    public static func _rlmArray() -> RLMArray<AnyObject> {
+        return RLMArray(objectType: .object, optional: false)
+    }
+}
+
+/**
+ A `Results` collection containing sync permission results.
+ */
+public typealias SyncPermissionResults = Results<SyncPermissionValue>
+
+extension Results where T == SyncPermissionValue {
+    // TODO: add juicy permission-specific functionality here
 }
